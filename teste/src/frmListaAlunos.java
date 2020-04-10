@@ -1,0 +1,398 @@
+import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.JTable;
+import javax.swing.JScrollPane;
+import java.awt.Toolkit;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.JComboBox;
+import java.awt.Font;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.ListSelectionModel;
+import javax.swing.border.LineBorder;
+import java.awt.Color;
+
+public class frmListaAlunos extends JFrame {
+	private JPanel contentPane;
+	private bd objBD = null;
+	private JTable tblAlunos;
+	private JTextField txtBuscar;
+	private JTextField txtNom;
+	private JTextField txtID;
+	private JTextField txtCPF;
+	private JTextField txtEMa;
+	private JTextField txtTel;
+	private JTextField txtNas;
+	private JTextField textField_5;
+	private JTextField textField_6;
+	private JTextField textField_7;
+	private JTextField textField_8;
+	private JTextField textField_9;
+	private JTextField txtCur;
+	private JComboBox<String> cbBoxBuscar;
+	private DefaultTableModel tblPesquisa;
+	
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					frmListaAlunos frame = new frmListaAlunos();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the frame.
+	 */
+	public frmListaAlunos() {
+		setIconImage(Toolkit.getDefaultToolkit().getImage("C:\\workspace\\teste\\img\\Icon - 200 x 200.jpg"));
+		this.objBD = new bd("POOX","root","");
+		setTitle("Alunos Cadastrados - Buscar ...");
+		setBounds(100, 100, 750, 588);
+		contentPane = new JPanel();
+		setContentPane(contentPane);
+		contentPane.setLayout(null);
+		
+//JLabel Procurar 		
+		JLabel lblNewLabel = new JLabel("Procurar");
+		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		lblNewLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
+		lblNewLabel.setBounds(312, 3, 64, 14);
+		contentPane.add(lblNewLabel);
+
+//JComboBox Buscar		
+		cbBoxBuscar = new JComboBox<String>();
+		cbBoxBuscar.setBounds(10, 28, 138, 20);
+		if(!objBD.conectaBD()){
+			JOptionPane.showMessageDialog(null, objBD.mensagem(),"Erro de conexão com o banco!",JOptionPane.ERROR_MESSAGE);
+		}else{
+			String sqlColunaAlunos ="SHOW COLUMNS FROM alunos";
+			ResultSet objRes = objBD.consulta(sqlColunaAlunos);
+			try{
+				while(objRes.next()){
+					cbBoxBuscar.addItem(objRes.getString(1));
+				}
+			}catch(SQLException e){
+				JOptionPane.showMessageDialog(null, objBD.mensagem(),"Erro de Consulta!", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+		contentPane.add(cbBoxBuscar);		
+		
+//JTextField Buscar		
+		txtBuscar = new JTextField();
+		txtBuscar.setToolTipText("");
+		txtBuscar.setBounds(158, 28, 345, 20);
+		contentPane.add(txtBuscar);
+		txtBuscar.setColumns(10);
+//JButton btnBuscar		
+		JButton btnBuscar = new JButton("Buscar");
+		btnBuscar.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(!objBD.conectaBD()){
+					JOptionPane.showMessageDialog(null, objBD.mensagem(),"Erro de conexão com o Banco!",JOptionPane.ERROR_MESSAGE);
+				}else{
+					mtdTable();
+					String sqlBuscar = "SELECT *, date_format(str_to_date(nascimento, '%Y-%m-%d'), '%d/%m/%Y') FROM alunos where "+cbBoxBuscar.getSelectedItem()+" LIKE '%"+txtBuscar.getText()+"%'";
+					ResultSet objRes = objBD.consulta(sqlBuscar);
+					try{
+						while(objRes.next()){
+							tblPesquisa.addRow(new Object[]{
+									objRes.getInt("id"),
+									objRes.getString("cpf"),
+									objRes.getString("nome"),
+									objRes.getString("date_format(str_to_date(nascimento, '%Y-%m-%d'), '%d/%m/%Y')"),
+									objRes.getString("email"),
+									objRes.getString("telefone"),
+									0//objRes.getString() total de cursos inscritos ou concluidos, falta fazer
+							});
+						}
+					}catch(SQLException b){
+						JOptionPane.showMessageDialog(null, objBD.mensagem(),"Erro de consulta!", JOptionPane.ERROR_MESSAGE);
+					}
+					objBD.desconecta();
+				}
+				
+			}
+		});
+		btnBuscar.setBounds(513, 27, 89, 23);
+		contentPane.add(btnBuscar);		
+
+//JButton Sair		
+		JButton btnSair = new JButton("Sair");
+		btnSair.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				objBD.desconecta();
+				dispose();
+				objBD.desconecta();
+			}
+		});
+		btnSair.setBounds(635, 27, 89, 23);
+		contentPane.add(btnSair);		
+		
+//JScrollPane para JTable		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(10, 59, 714, 148);
+		contentPane.add(scrollPane);
+//JTable 		
+		tblAlunos = new JTable();
+		tblAlunos.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		tblAlunos.getTableHeader().setReorderingAllowed(false);// bloquear troca de colunas para busca detalhada por id
+		tblAlunos.setModel(new DefaultTableModel(
+			new Object[][] {
+				{null, null, null, null, null, null, null},
+				{null, null, null, null, null, null, null},
+				{null, null, null, null, null, null, null},
+				{null, null, null, null, null, null, null},
+				{null, null, null, null, null, null, null},
+				{null, null, null, null, null, null, null},
+				{null, null, null, null, null, null, null},
+			},
+			new String[] {
+				"ID", "CPF", "Nome Completo", "Nascimento", "EMail", "Telefone", "Cursos"
+			}
+		) {
+			/**
+			 * 
+			 */
+			boolean[] columnEditables = new boolean[] {
+				false, false, false, false, false, false, false
+			};
+			public boolean isCellEditable(int row, int column) {
+				return columnEditables[column];
+			}
+		});
+		tblAlunos.getColumnModel().getColumn(0).setResizable(false);
+		tblAlunos.getColumnModel().getColumn(1).setResizable(false);
+		tblAlunos.getColumnModel().getColumn(1).setPreferredWidth(80);
+		tblAlunos.getColumnModel().getColumn(2).setResizable(false);
+		tblAlunos.getColumnModel().getColumn(2).setPreferredWidth(170);
+		tblAlunos.getColumnModel().getColumn(3).setResizable(false);
+		tblAlunos.getColumnModel().getColumn(4).setResizable(false);
+		tblAlunos.getColumnModel().getColumn(4).setPreferredWidth(116);
+		tblAlunos.getColumnModel().getColumn(5).setResizable(false);
+		tblAlunos.getColumnModel().getColumn(6).setResizable(false);
+		tblAlunos.getColumnModel().getColumn(6).setPreferredWidth(45);
+		scrollPane.setViewportView(tblAlunos);
+//JButton Detalhar Selecionado		
+		JButton btnDetalharSelecionado = new JButton("Detalhar Selecionado");
+		btnDetalharSelecionado.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int selRow = tblAlunos.getSelectedRow();
+				//int aluSel = Integer.parseInt(tblAlunos.getValueAt(selRow, 0).toString());
+				if (selRow == -1 ){
+					JOptionPane.showMessageDialog(null, "Selecione um cadastro para exibir!");
+				} else{
+					txtID.setText(tblPesquisa.getValueAt(selRow, 0).toString());
+					txtCPF.setText(tblPesquisa.getValueAt(selRow, 1).toString());
+					txtNom.setText(tblPesquisa.getValueAt(selRow, 2).toString());
+					txtNas.setText(tblPesquisa.getValueAt(selRow, 3).toString());
+					txtEMa.setText(tblPesquisa.getValueAt(selRow, 4).toString());
+					txtTel.setText(tblPesquisa.getValueAt(selRow, 5).toString());
+					txtCur.setText(tblPesquisa.getValueAt(selRow, 6).toString());
+				}
+				objBD.desconecta();
+			}
+		});
+		btnDetalharSelecionado.setBounds(10, 207, 169, 23);
+		btnDetalharSelecionado.setVerifyInputWhenFocusTarget(true);
+		contentPane.add(btnDetalharSelecionado);
+		
+		JLabel lblNome = new JLabel("Nome:");
+		lblNome.setBounds(21, 241, 46, 14);
+		contentPane.add(lblNome);
+		
+		JLabel lblId = new JLabel("ID:");
+		lblId.setBounds(21, 265, 46, 14);
+		contentPane.add(lblId);
+		
+		JLabel lblCpf = new JLabel("CPF:");
+		lblCpf.setBounds(495, 241, 37, 14);
+		contentPane.add(lblCpf);
+		
+		JLabel lblNascimento = new JLabel("Nascimento:");
+		lblNascimento.setBounds(200, 265, 71, 14);
+		contentPane.add(lblNascimento);
+		
+		JLabel lblEmail = new JLabel("EMail:");
+		lblEmail.setBounds(495, 265, 46, 14);
+		contentPane.add(lblEmail);
+		
+		JLabel lblTelefone = new JLabel("Telefone:");
+		lblTelefone.setBounds(200, 290, 58, 14);
+		contentPane.add(lblTelefone);
+		
+		JLabel lblDetalhesDaBusca = new JLabel("Detalhes da Busca");
+		lblDetalhesDaBusca.setFont(new Font("Times New Roman", Font.BOLD, 14));
+		lblDetalhesDaBusca.setHorizontalAlignment(SwingConstants.CENTER);
+		lblDetalhesDaBusca.setBounds(200, 218, 253, 14);
+		contentPane.add(lblDetalhesDaBusca);
+
+		
+		txtNom = new JTextField();
+		txtNom.setEditable(false);
+		txtNom.setBounds(72, 238, 402, 20);
+		contentPane.add(txtNom);
+		txtNom.setColumns(10);
+		
+		txtID = new JTextField();
+		txtID.setEditable(false);
+		txtID.setBounds(72, 262, 107, 20);
+		contentPane.add(txtID);
+		txtID.setColumns(10);
+		
+		txtCPF = new JTextField();
+		txtCPF.setEditable(false);
+		txtCPF.setBounds(542, 238, 136, 20);
+		contentPane.add(txtCPF);
+		txtCPF.setColumns(10);
+		
+		txtEMa = new JTextField();
+		txtEMa.setEditable(false);
+		txtEMa.setBounds(542, 262, 182, 20);
+		contentPane.add(txtEMa);
+		txtEMa.setColumns(10);
+		
+		txtTel = new JTextField();
+		txtTel.setEditable(false);
+		txtTel.setBounds(282, 287, 182, 20);
+		contentPane.add(txtTel);
+		txtTel.setColumns(10);
+		
+		txtNas = new JTextField();
+		txtNas.setEditable(false);
+		txtNas.setBounds(282, 262, 148, 20);
+		contentPane.add(txtNas);
+		txtNas.setColumns(10);
+		
+		
+//JLabel Descricao		
+		JLabel lblDescricao = new JLabel("Descri\u00E7\u00E3o:");
+		lblDescricao.setBounds(25, 162, 62, 14);
+		contentPane.add(lblDescricao);
+		//JScrollPane para JTextPane
+		JScrollPane scrollPane2;
+
+		
+		JPanel panel = new JPanel();
+		panel.setBorder(new LineBorder(new Color(171, 173, 179)));
+		panel.setBounds(10, 327, 714, 211);
+		contentPane.add(panel);
+		panel.setLayout(null);
+		
+		JComboBox comboBox = new JComboBox();
+		comboBox.setBounds(59, 22, 96, 20);
+		panel.add(comboBox);
+		
+		JLabel label = new JLabel("ID:");
+		label.setBounds(14, 25, 37, 14);
+		panel.add(label);
+		
+		JLabel lblNvel = new JLabel("N\u00EDvel:");
+		lblNvel.setBounds(14, 50, 46, 14);
+		panel.add(lblNvel);
+		
+		JLabel label_2 = new JLabel("\u00C1rea:");
+		label_2.setBounds(14, 73, 46, 14);
+		panel.add(label_2);
+		
+		JLabel lblCursol = new JLabel("Curso:");
+		lblCursol.setBounds(14, 98, 46, 14);
+		panel.add(lblCursol);
+		
+		textField_5 = new JTextField();
+		textField_5.setEditable(false);
+		textField_5.setColumns(10);
+		textField_5.setBounds(59, 47, 182, 20);
+		panel.add(textField_5);
+		
+		textField_6 = new JTextField();
+		textField_6.setEditable(false);
+		textField_6.setColumns(10);
+		textField_6.setBounds(59, 70, 182, 20);
+		panel.add(textField_6);
+		
+		textField_7 = new JTextField();
+		textField_7.setEditable(false);
+		textField_7.setColumns(10);
+		textField_7.setBounds(59, 95, 182, 20);
+		panel.add(textField_7);
+		
+		textField_8 = new JTextField();
+		textField_8.setEditable(false);
+		textField_8.setColumns(10);
+		textField_8.setBounds(59, 124, 96, 20);
+		panel.add(textField_8);
+		
+		JLabel label_4 = new JLabel("Dura\u00E7\u00E3o:");
+		label_4.setBounds(14, 127, 46, 14);
+		panel.add(label_4);
+		
+		JLabel label_5 = new JLabel("Horas/Aula.");
+		label_5.setBounds(176, 127, 65, 14);
+		panel.add(label_5);
+		
+		JLabel label_6 = new JLabel("Descri\u00E7\u00E3o");
+		label_6.setBounds(455, 11, 79, 20);
+		panel.add(label_6);
+		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBounds(251, 36, 453, 164);
+		panel.add(scrollPane_1);
+		
+		textField_9 = new JTextField();
+		textField_9.setEditable(false);
+		textField_9.setColumns(10);
+		textField_9.setBounds(60, 149, 96, 20);
+		panel.add(textField_9);
+		
+		JLabel label_7 = new JLabel("Horas/Aula.");
+		label_7.setBounds(176, 152, 65, 14);
+		panel.add(label_7);
+		
+		JLabel label_8 = new JLabel("Status");
+		label_8.setBounds(14, 152, 46, 14);
+		panel.add(label_8);
+		
+		JLabel label_9 = new JLabel("Cursos");
+		label_9.setHorizontalAlignment(SwingConstants.CENTER);
+		label_9.setFont(new Font("Times New Roman", Font.BOLD, 14));
+		label_9.setBounds(302, 0, 89, 14);
+		panel.add(label_9);
+		
+		txtCur = new JTextField();
+		txtCur.setBounds(72, 290, 86, 33);
+		contentPane.add(txtCur);
+		txtCur.setEditable(false);
+		txtCur.setColumns(10);
+		
+		JLabel lblCursos = new JLabel("<html>Cursos<br>total:</html>");
+		lblCursos.setBounds(21, 290, 46, 33);
+		contentPane.add(lblCursos);
+		
+
+	}
+	
+//metod dados na tabela
+	private void mtdTable(){
+		tblPesquisa = (DefaultTableModel)tblAlunos.getModel() ;//tblPesquisa recebe model tblAlunos, tipo defaulttablemodel?
+		tblPesquisa.setNumRows(0);//zera as linhas
+	}
+	
+	
+}
